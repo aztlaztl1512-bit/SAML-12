@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>النموذج (12) المطور - أ/ عبدالعزيز الفيفي</title>
+    <style>
+        :root { 
+            --primary: #212121; --secondary: #b19410; --accent: #ffc107; 
+            --bg: #f5f5f5; --white: #ffffff; --correct: #1b5e20; --wrong: #b71c1c;
+            --feedback-bg: #fffde7;
+        }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); display: flex; justify-content: center; padding: 20px; color: #333; overflow-x: hidden; }
+        #safety-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: gold; z-index: 1000000; display: none; flex-direction: column; justify-content: center; align-items: center; text-align: center; font-size: 2rem; }
+        .quiz-card { background: var(--white); width: 100%; max-width: 1000px; border-radius: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); border-top: 15px solid var(--secondary); padding: 35px; position: relative; }
+        .header { text-align: center; border-bottom: 3px double var(--secondary); margin-bottom: 25px; padding-bottom: 20px; }
+        .status-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: #fafafa; padding: 15px; border-radius: 12px; border: 1px solid #ddd; }
+        .q-badge { background: var(--primary); color: var(--accent); padding: 8px 25px; border-radius: 50px; font-weight: bold; border: 1px solid var(--secondary); }
+        .timer-circle { font-weight: 900; font-size: 1.4rem; color: var(--primary); width: 65px; height: 65px; border: 4px solid var(--secondary); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .timer-critical { color: white; background: var(--wrong); border-color: #000; animation: shake 0.5s infinite; }
+        @keyframes shake { 0% { transform: rotate(0); } 25% { transform: rotate(5deg); } 75% { transform: rotate(-5deg); } 100% { transform: rotate(0); } }
+        .passage-box { background: #fffde7; padding: 25px; border-radius: 15px; border-right: 10px solid var(--secondary); margin-bottom: 25px; line-height: 2; font-size: 1.2rem; box-shadow: inset 0 0 10px rgba(0,0,0,0.05); }
+        .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 25px 0; }
+        .opt-btn { padding: 22px; border: 2px solid #eee; border-radius: 15px; cursor: pointer; transition: 0.3s; font-weight: 600; background: #fff; text-align: center; font-size: 1.1rem; }
+        .opt-btn:hover { border-color: var(--secondary); background: #fffcf0; transform: translateY(-3px); }
+        .correct { background: var(--correct) !important; color: white; border-color: var(--correct) !important; }
+        .wrong { background: var(--wrong) !important; color: white; border-color: var(--wrong) !important; }
+        .feedback-panel { margin-top: 20px; padding: 25px; border-radius: 15px; display: none; background: var(--feedback-bg); border-right: 10px solid var(--correct); animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .btn-main { background: var(--primary); color: var(--accent); padding: 18px 60px; border: 2px solid var(--secondary); border-radius: 12px; cursor: pointer; font-size: 1.2rem; font-weight: bold; transition: 0.3s; }
+        .btn-main:hover { background: #333; }
+        .hidden { display: none !important; }
+        .log-item { padding: 20px; margin-bottom: 15px; border-radius: 15px; border-right: 15px solid; background: #fff; border: 1px solid #eee; position: relative; }
+        .log-ok { border-right-color: var(--correct); }
+        .log-no { border-right-color: var(--wrong); }
+        .watermark { position: absolute; bottom: 5px; left: 10px; font-size: 10px; color: rgba(0,0,0,0.2); font-weight: bold; }
+        @media (max-width: 600px) { .options-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+
+<div id="safety-overlay">
+    <h1>⚠️ نظام حماية المحتوى</h1>
+    <p>حقوق هذا العمل محفوظة للأستاذ: عبدالعزيز الفيفي. لا يسمح بإعادة النشر أو التعديل.</p>
+</div>
+
+<div class="quiz-card" id="quiz-container">
+    <div class="header">
+        <h3 id="owner-tag" style="margin:0; color:var(--secondary);">أ/ عبدالعزيز الفيفي - ثانوية الأمير عبدالمجيد ✨</h3>
+        <h2 style="margin:10px 0;">نموذج (12) - مراجعة القدرات الشاملة (بدون رموز)</h2>
+    </div>
+
+    <div id="start-screen" style="text-align: center;">
+        <p style="font-size: 1.3rem; color: #444;">مرحباً بكم في النموذج الثاني عشر المطور. تم حذف الرموز لزيادة التركيز على المحتوى العلمي.</p>
+        <input type="text" id="userNameInput" placeholder="اكتب اسمك الثلاثي..." style="width: 80%; padding: 20px; border-radius: 12px; border: 2px solid var(--secondary); text-align: center; font-size: 1.3rem; margin-bottom: 30px; outline: none;">
+        <br><button class="btn-main" onclick="startQuiz()">ابدأ اختبار النموذج 12 🚀</button>
+    </div>
+
+    <div id="quiz-screen" class="hidden">
+        <div class="status-bar">
+            <div>👤 الطالب: <span id="display-name" style="font-weight: bold; color: var(--secondary);"></span></div>
+            <div class="q-badge" id="display-q-idx"></div>
+            <div id="display-timer" class="timer-circle">45</div>
+        </div>
+        
+        <div id="display-text" class="passage-box hidden"></div>
+        <div id="display-question" style="font-size: 1.5rem; font-weight: bold; margin-bottom: 25px; text-align: center;"></div>
+        
+        <div id="display-options" class="options-grid"></div>
+        
+        <div id="feedback-panel" class="feedback-panel">
+            <b id="fb-title" style="font-size: 1.2rem; display: block; margin-bottom: 10px; color: var(--correct);"></b>
+            <div id="fb-desc" style="line-height: 1.8; color: #333;"></div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 35px;">
+            <button id="next-btn" class="btn-main hidden" onclick="handleNext()">السؤال التالي ⮕</button>
+        </div>
+    </div>
+
+    <div id="result-screen" class="hidden">
+        <div style="text-align: center; background: linear-gradient(135deg, var(--primary), #444); color: var(--accent); padding: 50px; border-radius: 20px; margin-bottom: 40px; border: 3px solid var(--secondary);">
+            <h1 id="res-score" style="margin: 0; font-size: 4.5rem;"></h1>
+            <p id="res-msg" style="font-size: 1.5rem; margin-top: 15px; color: #fff;"></p>
+            <p style="color: var(--secondary); font-weight: bold;">أ/ عبدالعزيز الفيفي - ثانوية الأمير عبدالمجيد ✨</p>
+        </div>
+        <h3>📚 أرشيف التغذية الراجعة والتحليل (نموذج 12):</h3>
+        <div id="res-logs"></div>
+        <div style="text-align: center; margin-top: 30px;">
+            <button class="btn-main" onclick="location.reload()">إعادة النموذج 🔄</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const LEGAL_SIGN = "أ/ عبدالعزيز الفيفي - ثانوية الأمير عبدالمجيد ✨";
+    function verifyRights() {
+        const el = document.getElementById('owner-tag');
+        if (!el || el.innerText.trim() !== LEGAL_SIGN) {
+            document.getElementById('safety-overlay').style.display = 'flex';
+            document.getElementById('quiz-container').style.display = 'none';
+        }
+    }
+    setInterval(verifyRights, 1000);
+
+    const rawData = [
+        { q: "عين : حور", opts: ["فم : بخر", "جلد : نعومة", "شعر : جعد", "أنف : شم"], ans: "فم : بخر", tip: "العلاقة (العضو وصفة محمودة/جميلة فيه)؛ الحور صفة جمال للعين، بينما البخر صفة ذم للفم.", cat: "تناظر" },
+        { q: "سماء : نجوم", opts: ["بحر : لؤلؤ", "غابة : أشجار", "كتاب : أوراق", "وجه : ملامح"], ans: "بحر : لؤلؤ", tip: "العلاقة (احتواء جمالي)؛ النجوم تزيّن السماء، واللؤلؤ يزيّن قاع البحر.", cat: "تناظر" },
+        { q: "رأس : تاج", opts: ["عنق : قلادة", "يد : خاتم", "قدم : نعل", "خصر : حزام"], ans: "عنق : قلادة", tip: "العلاقة (مكان الزينة الأساسي)؛ التاج يوضع فوق الرأس والقلادة حول العنق.", cat: "تناظر" },
+        { q: "نحل : خلية", opts: ["نمل : قرية", "طير : عش", "ضب : جحر", "عنكبوت : بيت"], ans: "نمل : قرية", tip: "العلاقة (كائن ومسكنه الجماعي المنظم)؛ النحل يسكن الخلية والنمل يسكن القرية.", cat: "تناظر" },
+        { q: "سيف : قتال", opts: ["قلم : معرفة", "محراث : زراعة", "مفتاح : إغلاق", "مقص : تفصيل"], ans: "محراث : زراعة", tip: "العلاقة (أداة ووظيفتها في مجال عملي)؛ السيف أداة القتال والمحراث أداة الزراعة.", cat: "تناظر" },
+        { q: "ليل : ظلام", opts: ["صيف : حر", "شتاء : مطر", "ربيع : ورد", "فجر : نور"], ans: "صيف : حر", tip: "العلاقة (اقتران زمني حتمي)؛ الليل يقترن بالظلام والصيف يقترن بالحر.", cat: "تناظر" },
+        { q: "صدق : طمأنينة", opts: ["كذب : ريبة", "غش : ربح", "وفاء : حب", "شجاعة : فوز"], ans: "كذب : ريبة", tip: "العلاقة (صفة أخلاقية وما تؤدي إليه)؛ الصدق يؤدي للطمأنينة والكذب يؤدي للريبة.", cat: "تناظر" },
+        { q: "جنين : أم", opts: ["ثمرة : نخلة", "بذرة : تربة", "ماء : بئر", "غصن : شجرة"], ans: "ثمرة : نخلة", tip: "العلاقة (احتواء وتغذية حيوية)؛ الجنين يتغذى من أمه والثمرة تتغذى من نخلتها.", cat: "تناظر" },
+        { q: "إن كثرة ........ تجعل الشخص ........ في أعين الناس.", opts: ["الكلام - صغيراً", "المزاح - خفيفاً", "الصمت - حكيماً", "التواضع - كبيراً"], ans: "المزاح - خفيفاً", tip: "المزاح الزائد يُفقد الشخص هيبته فيبدو 'خفيفاً' اجتماعياً.", cat: "إكمال جمل" },
+        { q: "من زاد حبه لنفسه ........ الناس ........", opts: ["زاد - كرههم", "قل - تقديرهم", "كثر - مديحهم", "انعدم - سؤالهم"], ans: "زاد - كرههم", tip: "الأنانية المفرطة هي منفر اجتماعي يؤدي لزيادة الكراهية.", cat: "إكمال جمل" },
+        { q: "يجب أن تكون نيتك ........ حتى لو كانت ظروفك ........", opts: ["صادقة - قاسية", "حسنة - سيئة", "قوية - مهزوزة", "خفية - واضحة"], ans: "حسنة - سيئة", tip: "النية الحسنة هي الثابت الذي لا يتأثر بالظروف الخارجية السيئة.", cat: "إكمال جمل" },
+        { q: "من أراد أن ........ فليتعلم كيف ........ أولاً.", opts: ["يقود - يطيع", "يربح - يخسر", "يتكلم - يصمت", "ينجح - يفشل"], ans: "يقود - يطيع", tip: "التسلسل المنطقي للقيادة يبدأ من الانضباط واتباع الأوامر أولاً.", cat: "إكمال جمل" },
+        { q: "القراءة هي ........ التي تطل منها على ........ الآخرين.", opts: ["النافذة - عقول", "البوابة - قلوب", "المرآة - صور", "اللغة - أسرار"], ans: "النافذة - عقول", tip: "القراءة تواصل فكري، والنافذة تشبيه للرؤية والانفتاح على عقول الآخرين.", cat: "إكمال جمل" },
+        { q: "الحياة تشبه ........ ، لا يمكنك أن تتقدم فيها وأنت تنظر في ........", opts: ["القيادة - المرآة", "المدرسة - الكتب", "الطريق - الخلف", "اللعبة - الخصم"], ans: "الطريق - الخلف", tip: "لا يمكن المضي قدماً بالالتفات الدائم للماضي (الخلف).", cat: "إكمال جمل" },
+        { q: "الاعتذار لا يعني أنك على ........ ، بل يعني أنك تقدر ........ أكثر من كبريائك.", opts: ["خطأ - العلاقة", "حق - الوقت", "صواب - المال", "باطل - الصداقة"], ans: "خطأ - العلاقة", tip: "الاعتذار قيمة اجتماعية تهدف لصون العلاقة الإنسانية.", cat: "إكمال جمل" },
+        { q: "الناجح هو الذي يغلق فمه قبل أن يغلق الناس آذانهم، ويفتح أذنيه قبل أن يفتح الناس أفواههم.", opts: ["الناجح", "يغلق فمه", "آذانهم", "أفواههم"], ans: "آذانهم", tip: "الخطأ في 'يغلق الناس آذانهم'؛ الصواب أن 'يفتح' الناس آذانهم لسماعه.", cat: "خطأ سياقي" },
+        { q: "إن المتفائل يرى صعوبة في كل فرصة، أما المتشائم فيرى فرصة في كل صعوبة.", opts: ["المتفائل", "صعوبة", "فرصة", "كل"], ans: "المتفائل", tip: "المتفائل هو من يرى الفرص دائماً. الصواب: 'المتشائم يرى صعوبة...'.", cat: "خطأ سياقي" },
+        { q: "من أعفي من المشقة، طمع في الراحة الدائمة.", opts: ["أعفي", "المشقة", "طمع", "الراحة"], ans: "طمع", tip: "الإعفاء من التعب يجعل الإنسان يرجو الراحة. الصواب: 'رغب'.", cat: "خطأ سياقي" },
+        { q: "العظمة ليست في ألا تسقط أبداً، بل في أن تبقى ساقطاً كلما سقطت.", opts: ["العظمة", "تسقط", "تبقى", "ساقطاً"], ans: "تبقى", tip: "العظمة في النهوض بعد السقوط. الصواب: 'تنهض'.", cat: "خطأ سياقي" },
+        { q: "يجب أن تتعامل مع الناس بفظاظة، لكي تحترمك القلوب وتوقرك العقول.", opts: ["تتعامل", "بفظاظة", "تحترمك", "وتوقرك"], ans: "بفظاظة", tip: "الفظاظة تنفر القلوب. الصواب: 'بلين'.", cat: "خطأ سياقي" },
+        { q: "الصدق صفة قبيحة، يجب على كل إنسان أن يتحلى بها لينال رضا الله.", opts: ["الصدق", "قبيحة", "إنسان", "يتحلى"], ans: "قبيحة", tip: "الصدق صفة حميدة. الخطأ في كلمة 'قبيحة'.", cat: "خطأ سياقي" },
+        { text: "أصبحت الطائرات بدون طيار أداة رئيسية في الزراعة الحديثة، حيث تستخدم لمراقبة نمو المحاصيل ورش الأسمدة بدقة متناهية، مما يقلل الهدر ويوفر الوقت.", q: "الوظيفة الأساسية للطائرات بدون طيار في النص هي:", opts: ["زيادة سرعة النقل", "تحسين كفاءة العمل الزراعي", "تصوير المزارع للترفيه", "استبدال المزارعين تماماً"], ans: "تحسين كفاءة العمل الزراعي", tip: "تحسين الكفاءة يشمل المراقبة والرش الدقيق وتقليل الهدر.", cat: "استيعاب" },
+        { text: "تتميز القهوة العربية بوجود مادة 'الكافيين' ومنكهات مثل 'الهيل'، وتعتبر رمزاً للضيافة والكرم في الجزيرة العربية منذ القدم.", q: "ما الذي تمثله القهوة حسب النص؟", opts: ["مشروب منبه فقط", "قيمة اجتماعية ثقافية", "مادة طبية علاجية", "منتج تجاري عالمي"], ans: "قيمة اجتماعية ثقافية", tip: "الضيافة والكرم قيم اجتماعية وثقافية عريقة.", cat: "استيعاب" },
+        { text: "التعلم عن بعد وفر فرصاً تعليمية للمناطق النائية، لكنه يتطلب بنية تحتية تقنية قوية وانضباطاً ذاتياً عالياً من الطالب.", q: "أكبر تحدي يواجه الطالب في التعلم عن بعد هو:", opts: ["توفر الكتب الورقية", "الانضباط الذاتي", "تكلفة المواصلات", "طول وقت المحاضرة"], ans: "الانضباط الذاتي", tip: "النص حدد 'الانضباط الذاتي' كمتطلب شخصي أساسي.", cat: "استيعاب" },
+        { text: "تفرز أشجار الصنوبر مادة صمغية تحميها من هجمات الحشرات الضارة وتساعد في التئام الجروح الناتجة عن الرياح القوية.", q: "المادة الصمغية في أشجار الصنوبر تعمل كـ:", opts: ["وسيلة للتكاثر", "جهاز مناعي ووقائي", "مصدر للغذاء", "مادة للزينة"], ans: "جهاز مناعي ووقائي", tip: "الحماية والالتئام وظائف وقائية ومناعية للنبات.", cat: "استيعاب" },
+        { text: "يؤدي ارتفاع نسبة الملوحة في التربة إلى إعاقة امتصاص الجذور للماء، مما يسبب ذبول المحاصيل حتى في وجود الري.", q: "المشكلة التي تسببها الملوحة هي مشكلة:", opts: ["نقص في كمية مياه الري", "عجز في قدرة النبات على الامتصاص", "زيادة في نمو الحشائش", "تغير في لون التربة"], ans: "عجز في قدرة النبات على الامتصاص", tip: "الملوحة تعيق عملية الامتصاص الفيزيولوجية للجذور.", cat: "استيعاب" },
+        { text: "الذكاء الاصطناعي التوليدي قادر على صياغة النصوص، لكنه يفتقر للحس النقدي الذي يتميز به العقل البشري.", q: "يتفوق البشر على الذكاء الاصطناعي في:", opts: ["سرعة كتابة الكلمات", "امتلاك الحس النقدي", "تخزين كميات البيانات", "العمل بدون تعب"], ans: "امتلاك الحس النقدي", tip: "الحس النقدي ميزة بشرية يفتقدها الذكاء الاصطناعي حالياً.", cat: "استيعاب" },
+        { text: "الشعاب المرجانية هي الغابات المطيرة للبحر، فهي تأوي ربع الكائنات البحرية وتعمل كمصدات للأمواج العاتية.", q: "يُفهم من النص أن الشعاب المرجانية:", opts: ["تنمو في الغابات", "توفر الحماية والتنوع الحيوي", "تعيق حركة السفن", "تسبب الأمواج العاتية"], ans: "توفر الحماية والتنوع الحيوي", tip: "المأوى يمثل التنوع الحيوي، والمصدات تمثل الحماية.", cat: "استيعاب" },
+        { text: "يعتمد توثيق الحسابات في المنصات الرقمية على تقنية 'التعرف على الوجه'، لضمان الخصوصية ومنع انتحال الشخصية.", q: "الهدف من تقنية التعرف على الوجه هو:", opts: ["زيادة سرعة تصفح التطبيق", "تعزيز الأمان والخصوصية", "تحسين جودة الصور", "تقليل تكلفة الاشتراك"], ans: "تعزيز الأمان والخصوصية", tip: "الخصوصية ومنع الانتحال هما ركيزتا الأمان الرقمي.", cat: "استيعاب" },
+        { q: "المفردة الشاذة: مكة - المدينة - الرياض - القدس", opts: ["مكة", "المدينة", "الرياض", "القدس"], ans: "الرياض", tip: "الرياض عاصمة سياسية، بينما البقية مدن مقدسة.", cat: "مفردة شاذة" },
+        { q: "المفردة الشاذة: ذهب - فضة - ألماس - نحاس", opts: ["ذهب", "فضة", "ألماس", "نحاس"], ans: "ألماس", tip: "الألماس حجر كريم، بينما البقية معادن صريحة.", cat: "مفردة شاذة" },
+        { q: "المفردة الشاذة: أسد - فهد - نمر - غزال", opts: ["أسد", "فهد", "نمر", "غزال"], ans: "غزال", tip: "الغزال حيوان عاشب، بينما البقية مفترسة.", cat: "مفردة شاذة" },
+        { q: "المفردة الشاذة: قميص - عمامة - ثوب - سروال", opts: ["قميص", "عمامة", "ثوب", "سروال"], ans: "عمامة", tip: "العمامة غطاء رأس، بينما البقية ملابس للجسد.", cat: "مفردة شاذة" },
+        { q: "المفردة الشاذة: طائرة - سفينة - سيارة - محطة", opts: ["طائرة", "سفينة", "سيارة", "محطة"], ans: "محطة", tip: "المحطة مكان، بينما البقية وسائل نقل حركية.", cat: "مفردة شاذة" },
+        { q: "المفردة الشاذة: شمس - قمر - أرض - مريخ", opts: ["شمس", "قمر", "أرض", "مريخ"], ans: "شمس", tip: "الشمس نجم مضيء، بينما البقية أجرام معتمة.", cat: "مفردة شاذة" },
+        { q: "ما الكلمة المرتبطة بـ 'صيف'؟", opts: ["مكيف", "مطر", "ثلج", "غيوم"], ans: "مكيف", tip: "المكيف هو الأداة المرتبطة بمواجهة حرارة الصيف.", cat: "ارتباط" },
+        { q: "الارتباط: 'طائرة : مطار' مثل 'قطار : ........'", opts: ["سكة", "محطة", "مقطورة", "رصيف"], ans: "محطة", tip: "علاقة مكان التوقف والوصول الرسمي.", cat: "ارتباط" },
+        { q: "ما الكلمة التي لا تنتمي لمجموعة 'الحمضيات'؟", opts: ["برتقال", "ليمون", "يوسفي", "خوخ"], ans: "خوخ", tip: "الخوخ ليس من فصيلة الحمضيات.", cat: "ارتباط" },
+        { q: "كلمة 'نحلة' ترتبط بـ 'عسل' كما ترتبط 'شجرة' بـ:", opts: ["ظل", "ورق", "ثمر", "ماء"], ans: "ثمر", tip: "علاقة المنتج النهائي المفيد.", cat: "ارتباط" },
+        { q: "الارتباط: 'فصل : مدرسة' مثل 'لاعب : ........'", opts: ["ملعب", "فريق", "مدرب", "كرة"], ans: "فريق", tip: "علاقة الجزء بالكل الجماعي.", cat: "ارتباط" }
+    ];
+
+    let currentQ = 0, scoreCount = 0, timerObj, mixedData = [], sName = "", logsList = [];
+    function shuffle(arr) { return arr.sort(() => Math.random() - 0.5); }
+
+    function startQuiz() {
+        sName = document.getElementById('userNameInput').value;
+        if(!sName.trim()) return alert("لطفاً، أدخل اسمك الثلاثي.");
+        document.getElementById('display-name').innerText = sName;
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('quiz-screen').classList.remove('hidden');
+        mixedData = shuffle([...rawData]);
+        loadQuestion();
+    }
+
+    function loadQuestion() {
+        verifyRights();
+        if(currentQ >= mixedData.length) return endQuiz();
+        const item = mixedData[currentQ];
+        document.getElementById('display-q-idx').innerText = `السؤال ${currentQ + 1} / 40`;
+        document.getElementById('display-question').innerText = item.q;
+        document.getElementById('feedback-panel').style.display = 'none';
+        document.getElementById('next-btn').classList.add('hidden');
+        
+        const txtBox = document.getElementById('display-text');
+        if(item.text) { txtBox.innerText = item.text; txtBox.classList.remove('hidden'); }
+        else { txtBox.classList.add('hidden'); }
+
+        const optBox = document.getElementById('display-options');
+        optBox.innerHTML = '';
+        shuffle([...item.opts]).forEach(o => {
+            const b = document.createElement('div');
+            b.className = 'opt-btn';
+            b.innerText = o;
+            b.onclick = () => checkResult(o, b);
+            optBox.appendChild(b);
+        });
+        runTimer();
+    }
+
+    function checkResult(sel, el) {
+        clearInterval(timerObj);
+        const item = mixedData[currentQ];
+        // تم تعديل منطق التحقق ليعتمد على نص الخيار بالكامل لضمان الدقة بعد حذف الرموز
+        const isOk = (sel === item.ans);
+        
+        document.querySelectorAll('.opt-btn').forEach(b => {
+            b.onclick = null;
+            if(b.innerText === item.ans) b.classList.add('correct');
+            else if(b.innerText === sel) b.classList.add('wrong');
+        });
+
+        if(isOk) scoreCount++;
+        const p = document.getElementById('feedback-panel');
+        p.style.display = 'block';
+        document.getElementById('fb-title').innerText = isOk ? "رائع! إجابة دقيقة ✅" : "للأسف، إجابة خاطئة ❌";
+        document.getElementById('fb-desc').innerText = item.tip;
+        document.getElementById('next-btn').classList.remove('hidden');
+        logsList.push({ q: item.q, cat: item.cat, state: isOk?'ok':'no', correct: item.ans, tip: item.tip });
+    }
+
+    function runTimer() {
+        let t = 45;
+        const d = document.getElementById('display-timer');
+        d.innerText = t;
+        d.classList.remove('timer-critical');
+        timerObj = setInterval(() => {
+            t--;
+            d.innerText = t;
+            if(t <= 10) d.classList.add('timer-critical');
+            if(t <= 0) { clearInterval(timerObj); checkResult("N/A", null); }
+        }, 1000);
+    }
+
+    function handleNext() { currentQ++; loadQuestion(); }
+
+    function endQuiz() {
+        document.getElementById('quiz-screen').classList.add('hidden');
+        document.getElementById('result-screen').classList.remove('hidden');
+        document.getElementById('res-score').innerText = `${scoreCount} / 40`;
+        document.getElementById('res-msg').innerText = `انتهى النموذج (12) يا ${sName}. استمر في هذا النشاط للوصول لـ 100% بإذن الله.`;
+        
+        const box = document.getElementById('res-logs');
+        box.innerHTML = '';
+        logsList.forEach((l, i) => {
+            const div = document.createElement('div');
+            div.className = `log-item ${l.state==='ok'?'log-ok':'log-no'}`;
+            div.innerHTML = `<div class="watermark">© أ/ عبدالعزيز الفيفي - ثانوية الأمير عبدالمجيد</div><strong>س${i+1}: [${l.cat}] ${l.q}</strong><br>الإجابة الصحيحة: <span style="color:var(--correct)">${l.correct}</span><br><div style="margin-top:10px; font-size:0.9rem; color:#444; border-top:1px solid #eee; padding-top:8px;">💡 الشرح التعليمي: ${l.tip}</div>`;
+            box.appendChild(div);
+        });
+    }
+</script>
+</body>
+</html>
